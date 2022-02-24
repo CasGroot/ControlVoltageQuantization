@@ -4,20 +4,22 @@ from qtorch.quant import fixed_point_quantize, float_quantize
 
 def quantize_control_voltages(filename, printvalues = True, save = True):
     control_voltages = torch.load(filename)
-
-    float16 = float_quantize(control_voltages, exp=5, man=10, rounding="nearest")
-    float8 = float_quantize(control_voltages, exp=4, man=3, rounding="nearest")
-    fixed16 = fixed_point_quantize(control_voltages, 16, 14)
-    fixed8 = fixed_point_quantize(control_voltages, 8, 6)
-    fixed4 = fixed_point_quantize(control_voltages, 4, 2)
+    
+    float16exp5 = float_quantize(control_voltages, exp=5, man=10, rounding="nearest")
+    float8exp2 = float_quantize(control_voltages, exp=2, man=5, rounding="nearest")
+    fixed16frac14 = fixed_point_quantize(control_voltages, 16, 14)
+    fixed8frac6 = fixed_point_quantize(control_voltages, 8, 6)
+    fixed5frac3 = fixed_point_quantize(control_voltages, 5, 3)
+    fixed4frac2 = fixed_point_quantize(control_voltages, 4, 2)
 
     quantized_control_voltages_dict = {
         'original': control_voltages,
-        'float16': float16,
-        'float8': float8,
-        'fixed16': fixed16,
-        'fixed8': fixed8,
-        'fixed4': fixed4,
+        'float16exp5': float16exp5,
+        'float8exp2': float8exp2,
+        'fixed16frac14': fixed16frac14,
+        'fixed8frac6': fixed8frac6,
+        'fixed5frac3': fixed5frac3,
+        'fixed4frac2': fixed4frac2,
     }
 
     if (printvalues):
@@ -29,4 +31,4 @@ def quantize_control_voltages(filename, printvalues = True, save = True):
     if (save):
         torch.save(quantized_control_voltages_dict, 'quantized_control_voltages.pickle')
 
-quantize_control_voltages('control_voltages.pickle', True, True)
+quantize_control_voltages('control_voltages.pickle')
