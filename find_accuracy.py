@@ -27,7 +27,7 @@ def subplot_output(original, quantized, key, show = False):
     ax1.plot(original)
     ax1.set_title('original')
     ax2.plot(quantized)
-    ax2.set_title('qauntized : {}'.format(key))
+    ax2.set_title('quantized : {}'.format(key))
     fig.savefig(os.path.join(plot_dir, "subplot_output" + key + ".jpg"))
 
 def absmse_append(original, quantized, key):
@@ -52,14 +52,23 @@ def rmse_append(original, quantized, key):
     else:
         print('was none')
 
-def save_loss():
+def save_dicts():
     with open(os.path.join(plot_dir, 'losses.yaml'), 'w') as file:
         yaml.dump(str(absmsedict), file)
         yaml.dump(str(relmsedict), file)
         yaml.dump(str(rmsedict), file)
+        yaml.dump(str(meandict), file)
+        yaml.dump(str(stddict), file)
+    dicts = {'absmse': absmsedict, 
+            'relmsedict': relmsedict,
+            'rmsedict': rmsedict,
+            'meandict': meandict, 
+            'stddict': stddict,
+            }
+    torch.save(dicts, 'info.pickle')
 
 # path to reproducibility file
-path= 'C:/Users/CasGr/Documents/github/brainspy-tasks/tmp/ring/searcher_0.3gap_2022_02_25_152734/reproducibility/'
+path= r'C:\Users\CasGr\Documents\github\brainspy-tasks\tmp\ring\searcher_0.5gap_2022_02_28_152609\reproducibility'
 # path to file where plots should be saved
 plot_dir= 'C:/Users/CasGr/Documents/github/plots'
 
@@ -71,29 +80,43 @@ results = torch.load(os.path.join(path, "results.pickle"))
 # model_state_dict = torch.load(os.path.join(path, "model.pt"))
 training_data = torch.load(os.path.join(path, "training_data.pickle"))
 quantized_control_voltages = torch.load(os.path.join(path, "quantized_control_voltages.pickle"))
-quantized_control_voltages2 = {}
-quantized_control_voltages2['fixed4frac2'] = quantized_control_voltages['fixed4frac2']
-# print(quantized_control_voltages2)
+# quantized_control_voltages2 = {}
+# quantized_control_voltages2['original'] = quantized_control_voltages['original']
 
 # creating a new model instance and setting quantized control voltages
-# new_model_instance = DefaultCustomModel(configs['processor'])
-new_model_instance = Architecture21(configs['processor'])
+new_model_instance = DefaultCustomModel(configs['processor'])
+model = 'DCM'
+# new_model_instance = Architecture21(configs['processor'])
+# model = 'Arch21'
 new_model_instance.load_state_dict(training_data['model_state_dict'])
 
 plot_perceptron(results['test_results']['accuracy'], save_dir=plot_dir, name="test")
 
+# initialize dictionaries
 absmsedict = {}
 relmsedict = {}
 rmsedict = {}
+meandict = {}
+stddict = {}
 
 for key in quantized_control_voltages:
     new_model_instance.set_control_voltages(quantized_control_voltages[key])
     # finding predictions using quantized control voltages
     for param in new_model_instance.parameters():
         param.requires_grad = False 
-    prediction_train = new_model_instance(results['train_results']['inputs'])
-    prediction_test = new_model_instance(results['test_results']['inputs'])
-
+    if (model == 'Arch21'):
+        prediction_train, output = new_model_instance(results['train_results']['inputs'])
+        prediction_test, output = new_model_instance(results['test_results']['inputs'])
+        mean = torch.mean(output['c_dnpu_output'])
+        std = torch.std(output['c_dnpu_output'])
+        print('{} mean: {}'.format(key, mean))
+        print('{} std: {}'.format(key, std))
+        meandict['mean ' + key] = mean
+        stddict['std ' + key] = std
+    elif (model == 'DCM'):
+        prediction_train = new_model_instance(results['train_results']['inputs'])
+        prediction_test = new_model_instance(results['test_results']['inputs'])
+    
     # training a perceptron to find a suitable threshold
     accuracy_dict_training = get_accuracy(prediction_train, results['train_results']['targets'], configs['accuracy'], node=None)
     
@@ -112,7 +135,7 @@ for key in quantized_control_voltages:
     relmse_append(results['test_results']['best_output'], prediction_test, key)
     rmse_append(results['test_results']['best_output'], prediction_test, key)
 
-    save_loss()
+    save_dicts()
 
 
     
