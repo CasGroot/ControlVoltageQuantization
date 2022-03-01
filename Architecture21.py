@@ -20,8 +20,8 @@ class Architecture21(nn.Module):
 
         self.l1_nodes = 2
         self.l2_nodes = 1
-        self.l1_input_list = [[1, 4]] * self.l1_nodes
-        self.l2_input_list = [[1, 4]] * self.l2_nodes
+        self.l1_input_list = [[0, 4]] * self.l1_nodes
+        self.l2_input_list = [[0, 4]] * self.l2_nodes
 
         self.dnpu_l1 = DNPUBatchNorm(self.processor,
                                      data_input_indices=self.l1_input_list)
@@ -35,9 +35,10 @@ class Architecture21(nn.Module):
     def forward(self, x):
         x = torch.cat((x, x), dim=1)
         x = self.dnpu_l1(x)
+        output = self.dnpu_l1.get_logged_variables()
         x = torch.sigmoid(x)
         x = self.dnpu_out(x)
-        return x
+        return x, output
 
     def format_targets(self, x):
         return self.dnpu_l1.format_targets(x)
