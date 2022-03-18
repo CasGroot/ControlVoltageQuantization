@@ -35,10 +35,10 @@ class Architecture21(nn.Module):
     def forward(self, x):
         x = torch.cat((x, x), dim=1)
         x = self.dnpu_l1(x)
-        output = self.dnpu_l1.get_logged_variables()
+        # output = self.dnpu_l1.get_logged_variables()
         x = torch.sigmoid(x)
         x = self.dnpu_out(x)
-        return x, output
+        return x
 
     def format_targets(self, x):
         return self.dnpu_l1.format_targets(x)
@@ -47,6 +47,15 @@ class Architecture21(nn.Module):
         self.eval()
         self.processor.load_processor(configs, info)
 
+    def set_running_mean(self, running_mean):
+        self.dnpu_l1.bn.running_mean = running_mean
+    
+    def set_running_var(self, running_var):
+        self.dnpu_l1.bn.running_var = running_var
+
+    def get_running_mean(self):
+        return self.dnpu_l1.bn.running_mean
+        
     def get_input_ranges(self):
         # Necessary to implement for the automatic data input to voltage conversion
         pass
@@ -57,10 +66,7 @@ class Architecture21(nn.Module):
         for key in dnpu_l1_logs.keys():
             log['l1_' + key] = dnpu_l1_logs[key]
 
-        # dnpu_l2_logs = self.dnpu_l2.get_logged_variables()
-        # for key in dnpu_l2_logs.keys():
-        #     log['l2_' + key] = dnpu_l2_logs[key]
-        log['l3_output'] = self.output
+        log['l2_output'] = self.dnpu_out
         log['a'] = self.a
         return log
 
