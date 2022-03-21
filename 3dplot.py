@@ -20,7 +20,7 @@ x_quant = torch.load(os.path.join(plot_dir, 'quantized_2d_inputs.pickle'))
 
 # getting the configs for the processor 
 configs = load_configs(r"C:\Users\CasGr\Documents\github\brainspy-tasks\configs\defaults\processors\simulation.yaml")
-
+configs['input_indices'] = [0, 4]
 # creating a processor
 model = DefaultCustomModel(configs)
 
@@ -30,9 +30,13 @@ output_original = model(x)
 output_quantized = model(x_quant['quantized_input_space_6'])
 
 error = (output_original - output_quantized)**2
-
+# plt.plot(error.detach().numpy())
+# plt.show()
 fig = plt.figure()
 ax = plt.axes(projection='3d')
 
 ax.scatter(x[:,0].detach().numpy(), x[:,1].detach().numpy(), error.detach().numpy(), c=error.detach().numpy(), cmap='viridis', linewidth=0.5)
+ax.set_xlabel('input1')
+ax.set_ylabel('input2')
+ax.set_zlabel('error')
 plt.show()
