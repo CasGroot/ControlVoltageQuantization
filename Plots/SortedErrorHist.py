@@ -1,23 +1,11 @@
 import os
 import torch
-from brainspy.utils.io import load_configs
-from bspytasks.models.InputSpace import AllInputs
 import matplotlib.pyplot as plt
 from brainspy.utils.transforms import linear_transform
 
 # path to file where plots should be saved
-path = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\inputspace\-1_1'
+path = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\inputspace\-1_1\NewAll16'
 plot_dir = r'C:\Users\CasGr\Documents\github\plots'
-
-# getting the configs for the processor 
-configs = load_configs(r"C:\Users\CasGr\Documents\github\brainspy-tasks\configs\defaults\processors\simulation.yaml")
-
-# creating a processor
-model = AllInputs(configs)
-
-# Creating 30k uniform random values over the input space and saves them to given file
-# x = torch.FloatTensor(30000, 7).uniform_(-1, 1)
-# torch.save(x, os.path.join(path, 'random_inputs.pickle'))
 
 # load already created inputs
 x = torch.load(os.path.join(path, 'random_inputs.pickle'))
@@ -26,8 +14,10 @@ x = torch.load(os.path.join(path, 'random_inputs.pickle'))
 x_quant = torch.load(os.path.join(path, 'quantized_input_space.pickle'))
 
 # Runs a forward pass through dnpu surrogate model using generated input space
-output_original = model(x)
-output_quantized = model(x_quant['quantized_input_space_4'])
+outputs = torch.load(os.path.join(path, 'output_quantized_dict_simulation_old_model.pickle'))
+
+output_original = outputs['output_16']
+output_quantized = outputs['output_8']
 
 # Calculate error
 errortype = 'relative'
@@ -62,7 +52,7 @@ for i in range(size-n, size):
     input6[i-size+n] = x[index[i], 5]
     input7[i-size+n] = x[index[i], 6]
 
-input_ranges = model.get_input_ranges()
+input_ranges = torch.load(os.path.join(path, 'quick_input_ranges.pickle'))
 
 # Apply linear transformation on inputs to match input range of dnpu
 transformed_input1 = linear_transform(-1, 1, input_ranges[0,0,0], input_ranges[0,0,1], input1) 
