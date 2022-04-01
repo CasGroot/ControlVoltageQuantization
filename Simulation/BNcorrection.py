@@ -8,7 +8,7 @@ from brainspy.utils.pytorch import TorchUtils
 import matplotlib.pyplot as plt
 
 # path to reproducibility file
-path = r'C:\Users\CasGr\Documents\github\brainspy-tasks\tmp\ring\searcher_0.3gap_2022_03_21_114113_21_8nA_error\reproducibility'
+path = r'C:\Users\CasGr\Documents\github\brainspy-tasks\tmp\ring\ring_classification_gap_0.3_2022_03_21_143304_single_8nA_error\reproducibility'
 
 # path to file where plots should be saved
 plot_dir = 'C:/Users/CasGr/Documents/github/plots'
@@ -35,7 +35,7 @@ quantized_control_voltages = torch.load(os.path.join(path, 'quantized_control_vo
 original_output = new_model_instance(results['test_results']['inputs'])
 
 # setting quantized control voltages
-new_model_instance.set_control_voltages(quantized_control_voltages['fixed4frac2'])
+new_model_instance.set_control_voltages(quantized_control_voltages['fixed6frac4'])
 
 # finding mean and variance before batch norm
 new_model_instance(results['train_results']['inputs'])
