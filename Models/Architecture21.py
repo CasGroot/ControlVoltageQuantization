@@ -20,11 +20,12 @@ class Architecture21(nn.Module):
 
         self.l1_nodes = 2
         self.l2_nodes = 1
-        self.l1_input_list = [[0, 4]] * self.l1_nodes
-        self.l2_input_list = [[0, 4]] * self.l2_nodes
+        self.l1_input_list = [[2, 4]] * self.l1_nodes
+        self.l2_input_list = [[2, 4]] * self.l2_nodes
 
         self.dnpu_l1 = DNPUBatchNorm(self.processor,
-                                     data_input_indices=self.l1_input_list)
+                                     data_input_indices=self.l1_input_list, 
+                                     momentum = 0.05)
         self.dnpu_l1.add_input_transform(input_range=[-1, 1], strict=False)
 
         self.dnpu_out = DNPU(self.processor,
