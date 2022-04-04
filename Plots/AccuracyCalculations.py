@@ -1,0 +1,150 @@
+import os
+import torch
+from brainspy.utils.io import load_configs
+from bspytasks.models.default_ring import DefaultCustomModel
+from bspytasks.models.Architecture21 import Architecture21
+from brainspy.algorithms.modules.performance.accuracy import get_accuracy
+from brainspy.utils.manager import get_criterion
+from bspytasks.ring.tasks.classifier import plot_perceptron
+import matplotlib.pyplot as plt
+import yaml
+
+
+def plot_output(original, quantized, key):
+    # plotting output of original and quantized model in one plot
+    plt.figure()
+    plt.plot(original.detach().numpy(), c='blue', label='original')
+    plt.plot(quantized.detach().numpy(), c='r', label=key)
+    plt.title('output (nA)')
+    plt.legend()
+    plt.savefig(os.path.join(plot_dir, key + ".jpg"))
+
+
+def subplot_output(original, quantized, key):
+    # plotting output of original and quantized model in subplots
+    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig.suptitle('output (nA)')
+    ax1.plot(original.detach().numpy())
+    ax1.set_title('original')
+    ax2.plot(quantized.detach().numpy())
+    ax2.set_title('quantized : {}'.format(key))
+    fig.savefig(os.path.join(plot_dir, "subplot_" + key + ".jpg"))
+
+
+def absmse_append(original, quantized, key):
+    # append dictionary of mse without offset
+    absdiff = original - quantized
+    if (torch.sum(absdiff**2)/absdiff.size()[0] is not None):
+        absmsedict['absolute mse ' + key] = torch.sum(absdiff**2)/absdiff.size()[0]
+    else:
+        print('was none')
+
+
+def relmse_append(original, quantized, key):
+    # append dictionary of mse with offset
+    meandiff = torch.mean(quantized) - torch.mean(original)
+    shiftedquantized = quantized - meandiff
+    reldiff = original - shiftedquantized
+    if (torch.sum(reldiff**2)/reldiff.size()[0] is not None):
+        relmsedict['relative mse ' + key] = torch.sum(reldiff**2)/reldiff.size()[0]
+
+
+def rmse_append(original, quantized, key):
+    # append dictionary of rmse
+    absdiff = original - quantized
+    if (torch.sqrt(torch.sum(absdiff**2)/absdiff.size()[0]) is not None):
+        rmsedict['rmse ' + key] = torch.sqrt(torch.sum(absdiff**2)/absdiff.size()[0])
+    else:
+        print('was none')
+
+
+def mean_append(mean1, mean2, std, i):
+    # append dictionary of mean and std
+    mean1dict[i] = mean1
+    mean2dict[i] = mean2
+    stddict[i] = std
+
+
+def plot_accuracyvsbits(accuracyarray):
+    # plotting accuracy vs bits
+    fig = plt.figure()
+    plt.scatter(torch.linspace(16, 4, 13), accuracyarray)
+    plt.xlabel('number of bits')
+    plt.ylabel('accuracy')
+    fig.savefig(os.path.join(plot_dir, "accuracy_vs_bits.jpg"))
+
+
+def save_dicts():
+    # save all dictionaries
+    # with open(os.path.join(path, 'losses.yaml'), 'w') as file:
+    #     yaml.dump(str(absmsedict), file)
+    #     yaml.dump(str(relmsedict), file)
+    #     yaml.dump(str(rmsedict), file)
+    #     yaml.dump(str(mean1dict), file)
+    #     yaml.dump(str(mean2dict), file)
+    #     yaml.dump(str(stddict), file)
+    dicts = {
+            'absmsedict': absmsedict,
+            'relmsedict': relmsedict,
+            'rmsedict': rmsedict,
+            'mean1dict': mean1dict,
+            'mean2dict': mean2dict,
+            'stddict': stddict,
+            'accuracy': accuracyarray,
+            }
+    torch.save(dicts, os.path.join(plot_dir, 'info.pickle'))
+
+
+if __name__ == "__main__":
+
+    # path to reproducibility file
+    path = r'C:\Users\CasGr\Documents\github\brainspy-tasks\tmp\ring\searcher_0.3gap_2022_03_21_105812_21_quick\reproducibility'
+    # path to file where plots should be saved
+    plot_dir = 'C:/Users/CasGr/Documents/github/plots'
+
+    # loading in necessary files
+    configs = load_configs(os.path.join(path, "configs.yaml"))
+    results = torch.load(os.path.join(path, "results.pickle"))
+
+    # train_output = torch.load(os.path.join(path, 'ring_train_output_dict.pickle'))
+    test_output = torch.load(os.path.join(path, 'ring_test_output_dict.pickle'))
+
+    # initialize dictionaries
+    absmsedict = {}
+    relmsedict = {}
+    rmsedict = {}
+    mean1dict = {}
+    mean2dict = {}
+    stddict = {}
+    # accuracyarray = results['test_results']['accuracy']['accuracy_value'].view(1)
+    accuracyarray = torch.Tensor(0)
+
+    i = 16
+
+    for key in test_output:
+        # training a perceptron to find a suitable threshold
+        # accuracy_dict_training = get_accuracy(train_output[key], results['train_results']['targets'], configs['accuracy'], node=results[''])
+
+        # finding the accuracy of the model on test data
+        accuracy_dict_test = get_accuracy(test_output[key], results['test_results']['targets'], configs['accuracy'], node = results['test_results']['accuracy']['node'])
+
+        # plotting perceptron 
+        plot_perceptron(accuracy_dict_test, save_dir=plot_dir, name="quant_" + key)
+
+        # plotting outpout
+        subplot_output(results['test_results']['best_output'], test_output[key], key)
+        plot_output(results['test_results']['best_output'], test_output[key], key)
+
+        # calculating different losses for output of the model
+        # fisherloss = loss_fn(prediction_test, results['test_results']['targets'])
+        absmse_append(results['test_results']['best_output'], test_output[key], key)
+        relmse_append(results['test_results']['best_output'], test_output[key], key)
+        rmse_append(results['test_results']['best_output'], test_output[key], key)
+
+        # adding accuracy values to array
+        accuracyarray = torch.cat((accuracyarray, accuracy_dict_test['accuracy_value'].view(1)))
+        save_dicts()
+        i -= 1
+    
+    # print(accuracyarray)
+    plot_accuracyvsbits(accuracyarray)
