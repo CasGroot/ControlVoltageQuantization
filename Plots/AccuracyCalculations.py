@@ -122,11 +122,8 @@ if __name__ == "__main__":
     i = 16
 
     for key in test_output:
-        # training a perceptron to find a suitable threshold
-        # accuracy_dict_training = get_accuracy(train_output[key], results['train_results']['targets'], configs['accuracy'], node=results[''])
-
         # finding the accuracy of the model on test data
-        accuracy_dict_test = get_accuracy(test_output[key], results['test_results']['targets'], configs['accuracy'], node = results['test_results']['accuracy']['node'])
+        accuracy_dict_test = get_accuracy(test_output[key], results['test_results']['targets'], configs['accuracy'], node = results['train_results']['accuracy']['node'])
 
         # plotting perceptron 
         plot_perceptron(accuracy_dict_test, save_dir=plot_dir, name="quant_" + key)
@@ -136,15 +133,12 @@ if __name__ == "__main__":
         plot_output(results['test_results']['best_output'], test_output[key], key)
 
         # calculating different losses for output of the model
-        # fisherloss = loss_fn(prediction_test, results['test_results']['targets'])
         absmse_append(results['test_results']['best_output'], test_output[key], key)
         relmse_append(results['test_results']['best_output'], test_output[key], key)
         rmse_append(results['test_results']['best_output'], test_output[key], key)
 
         # adding accuracy values to array
         accuracyarray = torch.cat((accuracyarray, accuracy_dict_test['accuracy_value'].view(1)))
-        save_dicts()
         i -= 1
     
-    # print(accuracyarray)
-    plot_accuracyvsbits(accuracyarray)
+    save_dicts()
