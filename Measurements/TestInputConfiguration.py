@@ -35,7 +35,7 @@ if __name__ == "__main__":
 
     # Quantize 1 electrode
 
-    conf1 = {'no_electrodes': output_original}
+    conf1 = {}
 
     for a in range(0, 7):
         x_conf[:, a] = x_quantized[:, a]
