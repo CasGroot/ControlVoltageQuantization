@@ -48,7 +48,7 @@ if __name__ == "__main__":
     index10 = np.array([])
     errorlistdict = {}
 
-    for j in range(1,3):
+    for j in range(0,7):
         if j == 1:
             output_quantized = outputs['output_8']
         elif j == 2:

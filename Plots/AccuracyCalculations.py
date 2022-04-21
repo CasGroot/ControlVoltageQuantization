@@ -76,13 +76,6 @@ def plot_accuracyvsbits(accuracyarray):
 
 def save_dicts():
     # save all dictionaries
-    # with open(os.path.join(path, 'losses.yaml'), 'w') as file:
-    #     yaml.dump(str(absmsedict), file)
-    #     yaml.dump(str(relmsedict), file)
-    #     yaml.dump(str(rmsedict), file)
-    #     yaml.dump(str(mean1dict), file)
-    #     yaml.dump(str(mean2dict), file)
-    #     yaml.dump(str(stddict), file)
     dicts = {
             'absmsedict': absmsedict,
             'relmsedict': relmsedict,
@@ -116,7 +109,6 @@ if __name__ == "__main__":
     mean1dict = {}
     mean2dict = {}
     stddict = {}
-    # accuracyarray = results['test_results']['accuracy']['accuracy_value'].view(1)
     accuracyarray = torch.Tensor(0)
 
     i = 16
