@@ -36,17 +36,21 @@ class Architecture21(nn.Module):
     def forward(self, x):
         x = torch.cat((x, x), dim=1)
         x = self.dnpu_l1(x)
-        # output = self.dnpu_l1.get_logged_variables()
         x = torch.sigmoid(x)
         x = self.dnpu_out(x)
         return x
 
     def format_targets(self, x):
+        x = self.dnpu_l1.format_targets(x)
         return self.dnpu_l1.format_targets(x)
 
     def hw_eval(self, configs, info=None):
         self.eval()
-        self.processor.load_processor(configs, info)
+        configs['input_indices'] = self.l1_input_list
+        self.processor.swap(configs, info)
+        self.dnpu_l1.init_electrode_info(configs['input_indices'])
+        configs['input_indices'] = self.l2_input_list
+        self.dnpu_out.init_electrode_info(configs['input_indices'])
 
     def set_running_mean(self, running_mean):
         self.dnpu_l1.bn.running_mean = running_mean
