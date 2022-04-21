@@ -30,8 +30,8 @@ class Architecture31(nn.Module):
     def forward(self, x):
         x = torch.cat((x, x, x), dim=1)
         x = self.dnpu_out(x)
-        x = self.linear(x)
-        return x
+        x = torch.sum(x, dim=1)
+        return x.view(x.size()[0], 1)
 
     def format_targets(self, x):
         return self.dnpu_l1.format_targets(x)
