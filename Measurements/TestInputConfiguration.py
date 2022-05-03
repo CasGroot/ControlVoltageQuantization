@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     # load already created inputs
     x = torch.load(os.path.join(main_dir, 'random_inputs.pickle'))
-    bits=4
+    bits=6
 
     # load quantized input space
     x_quant = torch.load(os.path.join(main_dir, 'quantized_input_space.pickle'))
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     output_original = model(x)
     AllConfDict = {'no_electrodes': output_original}
 
-    key = f'quantized_input_space{bits}'
+    key = f'quantized_input_space_{bits}'
     
     x_quantized = torch.clone(x_quant[key])
     x_conf = torch.clone(x)

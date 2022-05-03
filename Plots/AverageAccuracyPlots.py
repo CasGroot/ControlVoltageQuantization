@@ -7,8 +7,8 @@ import os
 if __name__ == "__main__":
     # path to file location
     # path = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\validation results\DefaultCustomModel\0.3_1_5_solutions_10\infodicts'
-    path = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\Results\Solutions\DefaultCustomModel\0.3_1_5_solutions_10\infodicts'
-    save_dir = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\Results\Plots_1_003_nA\AccuracyvsBits\DCM\0.3'
+    path = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\Results\Solutions\Architecture31\0.3_1_5_solutions_10\infodicts'
+    save_dir = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\Results\Plots_1_003_nA\AccuracyvsBits\Arch31\0.3'
 
     # initialize arrays
     accuracyarray = np.zeros((10, 13))
@@ -42,17 +42,20 @@ if __name__ == "__main__":
     # Plotting
     
     fig = plt.figure()
-    plt.boxplot(accuracyarray)
+    plt.boxplot(z)
     plt.xticks(np.linspace(1, 13, 13), np.linspace(16, 4, 13).astype(int))
-    plt.xlabel('number of bits')
+    plt.xlabel('# bits')
     if plot_type == 'rmse':
         plt.ylabel('RMSE (nA)') 
         plt.show()  
         fig.savefig(os.path.join(save_dir, 'rmsevsbits0_3gap'))
     if plot_type == 'accuracy':   
         plt.ylabel('accuracy (%)')
-        plt.ylim(50,100)
+        # plt.ylim(50,100)
         plt.show()
-        fig.savefig(os.path.join(save_dir, 'AccuracyvsBits0_3gap'))
+        if out_type == 'simulation':
+            fig.savefig(os.path.join(save_dir, 'AccuracyvsBits0_3gap'))
+        elif out_type == 'hardware':
+            fig.savefig(os.path.join(save_dir, 'hw_AccuracyvsBits0_5gap'))
     
     

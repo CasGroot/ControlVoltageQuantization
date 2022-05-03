@@ -1,13 +1,14 @@
 import os
 import torch
 from brainspy.utils.io import load_configs
-from bspytasks.models.default_ring import DefaultCustomModel
+from bspytasks.models.default_ring_cas import DefaultCustomModel
 from bspytasks.models.Architecture21 import Architecture21
 from brainspy.algorithms.modules.performance.accuracy import get_accuracy
 from brainspy.utils.manager import get_criterion
 from bspytasks.ring.tasks.classifier import plot_perceptron
 import matplotlib.pyplot as plt
 import yaml
+from brainspy.utils.pytorch import TorchUtils
 
 
 def plot_output(original, quantized, key):
@@ -89,48 +90,56 @@ def save_dicts():
 
 
 if __name__ == "__main__":
+    dir = r'C:\Users\CasGr\Documents\uni\BachelorOpdracht\Results\Solutions\DefaultCustomModel\0.3_1_5_solutions_10'
+    for searchfile in os.listdir(dir):
+        if searchfile != 'infodicts':       
+            # path to reproducibility file
+            path = os.path.join(dir, searchfile, 'reproducibility')
+            # path to file where plots should be saved
+            plot_dir = os.path.join(path, 'plots')
 
-    # path to reproducibility file
-    path = r'C:\Users\CasGr\Documents\github\brainspy-tasks\tmp\ring\searcher_0.3gap_2022_03_21_105812_21_quick\reproducibility'
-    # path to file where plots should be saved
-    plot_dir = 'C:/Users/CasGr/Documents/github/plots'
+            # loading in necessary files
+            configs = load_configs(r'C:\Users\CasGr\Documents\github\brainspy-tasks\configs\ring.yaml')
+            results = torch.load(os.path.join(path, "results.pickle"), map_location=TorchUtils.get_device())
+            training_data = torch.load(os.path.join(path, 'training_data.pickle'), map_location=TorchUtils.get_device())
 
-    # loading in necessary files
-    configs = load_configs(os.path.join(path, "configs.yaml"))
-    results = torch.load(os.path.join(path, "results.pickle"))
+            model = DefaultCustomModel(configs['processor'])
+            model.load_state_dict(training_data['model_state_dict'])
+            # train_output = torch.load(os.path.join(path, 'ring_train_output_dict.pickle'))
+            test_output = torch.load(os.path.join(path, 'ring_test_output_dict.pickle'), map_location=TorchUtils.get_device())
 
-    # train_output = torch.load(os.path.join(path, 'ring_train_output_dict.pickle'))
-    test_output = torch.load(os.path.join(path, 'ring_test_output_dict.pickle'))
+            # initialize dictionaries
+            absmsedict = {}
+            relmsedict = {}
+            rmsedict = {}
+            mean1dict = {}
+            mean2dict = {}
+            stddict = {}
+            accuracyarray = torch.Tensor(0)
 
-    # initialize dictionaries
-    absmsedict = {}
-    relmsedict = {}
-    rmsedict = {}
-    mean1dict = {}
-    mean2dict = {}
-    stddict = {}
-    accuracyarray = torch.Tensor(0)
+            i = 16
 
-    i = 16
+            for key in test_output:
+                
+                # finding the accuracy of the model on test data
+                for param in model.parameters():
+                    param.requires_grad = False 
+                accuracy_dict_test = get_accuracy(model(results['train_results']['inputs']), results['train_results']['targets'], configs['accuracy'])#, node = results['train_results']['accuracy']['node'])
 
-    for key in test_output:
-        # finding the accuracy of the model on test data
-        accuracy_dict_test = get_accuracy(test_output[key], results['test_results']['targets'], configs['accuracy'], node = results['train_results']['accuracy']['node'])
+                # plotting perceptron 
+                plot_perceptron(accuracy_dict_test, save_dir=plot_dir, name="quant_" + key, show_plots=True)
 
-        # plotting perceptron 
-        plot_perceptron(accuracy_dict_test, save_dir=plot_dir, name="quant_" + key)
+            #     # plotting outpout
+            #     subplot_output(results['test_results']['best_output'], test_output[key], key)
+            #     plot_output(results['test_results']['best_output'], test_output[key], key)
 
-        # plotting outpout
-        subplot_output(results['test_results']['best_output'], test_output[key], key)
-        plot_output(results['test_results']['best_output'], test_output[key], key)
+            #     # calculating different losses for output of the model
+            #     absmse_append(results['test_results']['best_output'], test_output[key], key)
+            #     relmse_append(results['test_results']['best_output'], test_output[key], key)
+            #     rmse_append(results['test_results']['best_output'], test_output[key], key)
 
-        # calculating different losses for output of the model
-        absmse_append(results['test_results']['best_output'], test_output[key], key)
-        relmse_append(results['test_results']['best_output'], test_output[key], key)
-        rmse_append(results['test_results']['best_output'], test_output[key], key)
-
-        # adding accuracy values to array
-        accuracyarray = torch.cat((accuracyarray, accuracy_dict_test['accuracy_value'].view(1)))
-        i -= 1
-    
-    save_dicts()
+            #     # adding accuracy values to array
+            #     accuracyarray = torch.cat((accuracyarray, accuracy_dict_test['accuracy_value'].view(1)))
+            #     i -= 1
+            
+            # save_dicts()
